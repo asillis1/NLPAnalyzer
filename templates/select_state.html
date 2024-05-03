@@ -1,0 +1,29 @@
+<!-- select_state.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select State</title>
+</head>
+<body>
+    <h1>Select State</h1>
+    
+    <form action="/select_state" method="post">
+        <!-- List of states -->
+        <label for="state">Select a State:</label>
+        <select id="state" name="state">
+            {% for state in states %}
+                <option value="{{ state }}">{{ state }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+        <br>
+        <!-- Submit button -->
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>
