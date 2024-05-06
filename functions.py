@@ -211,10 +211,10 @@ def calculate_metrics(group):
     })
 
 # Ensure 'Checkout Date' is a datetime type
-data['Checkout Date'] = pd.to_datetime(data['Checkout Date'])
+# data['Checkout Date'] = pd.to_datetime(data['Checkout Date'])
 
 # Extract 'Year-Month' and 'Quarter'
-data['Year-Month'] = data['Checkout Date'].dt.to_period('M')
+# data['Year-Month'] = data['Checkout Date'].dt.to_period('M')
 
 # Define the calculate_metrics function
 def calculate_metrics(group):
