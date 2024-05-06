@@ -7,6 +7,8 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
+data = pd.DataFrame()  # Initialize global variable data
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -18,6 +20,7 @@ def home():
 def handle_form():
     files = request.files.getlist('file1')  # Collect all uploaded files
     if files:
+        global data  # Use the global data variable
         # Merge CSV files into one DataFrame
         data = merge_csv_files(files)
         # Process the DataFrame based on the review type
@@ -28,19 +31,11 @@ def handle_form():
     else:
         return "No files uploaded", 400  # Handle the case where no files were uploaded
 
-from itertools import chain
-
 @app.route('/loading')
 def loading():
-    # Simulate computation delay (for demonstration purposes)
-    time.sleep(3)
-
-    # Load data
-    data = pd.read_csv(session['file_path'])
-    review_type = session['review_type']
-    
+    global data  # Use the global data variable
     # Process the DataFrame based on the review type
-    data = process_files(data, review_type)
+    data = process_files(data, session.get('review_type'))  # Use session.get() to avoid KeyError
 
     # Apply the cleaning function
     data['Cleaned Review'] = data['review'].apply(clean_text)
