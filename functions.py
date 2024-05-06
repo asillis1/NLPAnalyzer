@@ -7,26 +7,14 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from itertools import chain
+import nltk
+nltk.download('vader_lexicon')
 
 # File for defining functions used to run the app
 
 ################## VALIDATION FUNCTIONS
 
 #### Need to select a value in each dropdown
-
-
-
-#### If state, need to have a minimum of X records
-
-
-
-#### If aggregate, need to have a minimum of X records
-
-
-
-
-
-
 
 
 ##################### DATA CLEANING FUNCTIONS
