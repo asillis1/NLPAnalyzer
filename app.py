@@ -1,51 +1,65 @@
-from flask import Flask, render_template, request, redirect, url_for
-from functions import clean_text, contraction_mapping, custom_stopwords
-
+from flask import Flask, request, redirect, url_for, render_template, session
+from functions import merge_csv_files, process_files, clean_text, categorize_review, get_sentiment_scores, calculate_metrics
+import pandas as pd
+import time
+import os
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        geography = request.form.get('geography')
-        if geography == 'By State':
-            return redirect(url_for('select_state'))
-        elif geography == 'All':
-            return redirect(url_for('loading'))
+        return redirect(url_for('loading'))
 
     return render_template('home.html')
 
-@app.route('/select_state', methods=['GET', 'POST'])
-def select_state():
-    states = [
-        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
-        "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
-        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
-        "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
-        "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
-        "New Hampshire", "New Jersey", "New Mexico", "New York",
-        "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
-        "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
-        "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
-        "West Virginia", "Wisconsin", "Wyoming"
-    ]
+@app.route('/', methods=['POST'])
+def handle_form():
+    files = request.files.getlist('file1')  # Collect all uploaded files
+    if files:
+        # Merge CSV files into one DataFrame
+        data = merge_csv_files(files)
+        # Process the DataFrame based on the review type
+        review_type = request.form.get('review_type')
+        data = process_files(data, review_type)
+        # Depending on your next steps, here you could proceed with further processing or output
+        return "Files processed successfully."
+    else:
+        return "No files uploaded", 400  # Handle the case where no files were uploaded
 
-    if request.method == 'POST':
-        selected_state = request.form.get('state')
-        # Perform form validation here
-        if not selected_state:
-            return render_template('select_state.html', states=states, error='Please select a state.')
-
-        # Redirect to loading page
-        return redirect(url_for('loading'))
-
-    return render_template('select_state.html', states=states, error=None)
+from itertools import chain
 
 @app.route('/loading')
 def loading():
     # Simulate computation delay (for demonstration purposes)
-    import time
-    time.sleep(3)  # Delay for 3 seconds
+    time.sleep(3)
+
+    # Load data
+    data = pd.read_csv(session['file_path'])
+    review_type = session['review_type']
+    
+    # Process the DataFrame based on the review type
+    data = process_files(data, review_type)
+
+    # Apply the cleaning function
+    data['Cleaned Review'] = data['review'].apply(clean_text)
+
+    # Apply categorization and create a new DataFrame for categorized segments
+    categorized_data = [categorize_review(row) for index, row in data.iterrows()]
+    categorized_data = list(chain.from_iterable(categorized_data))  # Flatten the list of lists
+
+    # Create a new DataFrame from the categorized data
+    categorized_df = pd.DataFrame(categorized_data, columns=['Segment', 'Checkout Date', 'Cleaned Review', 'Category'])
+
+    # Polarity Scoring for each segment
+    data[['neg', 'neu', 'pos', 'compound']] = categorized_df['Cleaned Review'].apply(lambda review: pd.Series(get_sentiment_scores(review)))
+
+    # Aggregate metrics 
+    segment_metrics = data.groupby('Category').apply(calculate_metrics)
+    
+    # Store results for access in the results route
+    session['processed_data'] = categorized_df.to_json()
 
     # Redirect to results page
     return redirect(url_for('results'))
