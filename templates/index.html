@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload CSVs</title>
+</head>
+<body>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <label for="file1">Upload CSV 1:</label>
+        <input type="file" id="file1" name="file1" accept=".csv"><br>
+        <label for="file2">Upload CSV 2:</label>
+        <input type="file" id="file2" name="file2" accept=".csv"><br>
+        <label for="file3">Upload CSV 3:</label>
+        <input type="file" id="file3" name="file3" accept=".csv"><br>
+
+        <p>Geography:</p>
+        <input type="radio" id="state" name="geography" value="state" onclick="showDropdown()">
+        <label for="state">By State</label>
+        <input type="radio" id="all" name="geography" value="all" onclick="hideDropdown()">
+        <label for="all">All</label><br>
+        <select id="stateDropdown" style="display:none;">
+            {% for state in states %}
+                <option value="{{ state }}">{{ state }}</option>
+            {% endfor %}
+        </select><br>
+
+        <p>Review Type:</p>
+        <input type="radio" id="private" name="review_type" value="private">
+        <label for="private">Private</label>
+        <input type="radio" id="public" name="review_type" value="public">
+        <label for="public">Public</label>
+        <input type="radio" id="all_reviews" name="review_type" value="all">
+        <label for="all_reviews">All</label><br>
+
+        <p>Show me:</p>
+        <input type="radio" id="sentiment" name="show_me" value="sentiment">
+        <label for="sentiment">Sentiment Distribution</label>
+        <input type="radio" id="nlp" name="show_me" value="nlp">
+        <label for="nlp">NLP Metric</label>
+        <input type="radio" id="both" name="show_me" value="both">
+        <label for="both">Both</label><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <script>
+        function showDropdown() {
+            document.getElementById('stateDropdown').style.display = 'block';
+        }
+
+        function hideDropdown() {
+            document.getElementById('stateDropdown').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
