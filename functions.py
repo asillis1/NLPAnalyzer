@@ -7,7 +7,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from itertools import chain
-import nltk
+import os
 nltk.download('vader_lexicon')
 
 # File for defining functions used to run the app
@@ -73,6 +73,26 @@ def process_csv_files(directory, file_names):
     else:
         # Returning an empty DataFrame if no valid DataFrames were created
         return pd.DataFrame()
+
+# New function to process a single CSV file
+def process_single_csv_file(data):
+    """
+    Processes a single CSV file (in DataFrame form) by retaining specific columns and ensuring necessary data cleaning.
+
+    Args:
+    data (pd.DataFrame): The DataFrame to process.
+
+    Returns:
+    pd.DataFrame: Cleaned and processed DataFrame.
+    """
+    # Specify the columns you want to keep
+    columns_to_keep = ['checkout_date', 'property_name', 'public_review', 'private_feedback']
+    
+    # Filter columns if they are available in the DataFrame
+    columns = [col for col in columns_to_keep if col in data.columns]
+    data = data[columns]
+    
+    return data
 
 #### Create State Column (not optional)
 

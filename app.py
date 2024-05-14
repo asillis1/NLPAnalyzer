@@ -1,44 +1,46 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-import os
-from werkzeug.utils import secure_filename
+import io
+import pandas as pd
 import functions  # Import your functions module
 
 app = Flask(__name__)
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'csv'
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Get file list from form
-        files = request.files.getlist('file')
+        # Get the single file from form
+        file = request.files['file']
         geography = request.form['geography']
         review_type = request.form['review_type']
         show_me = request.form['show_me']
         selected_state = request.form.get('stateDropdown', None)
 
-        # Save uploaded files and process them
-        file_names = []
-        for file in files:
-            if file:
-                filename = secure_filename(file.filename)
-                filepath = os.path.join('uploads', filename)
-                file.save(filepath)
-                file_names.append(filepath)
+        if file and allowed_file(file.filename):
+            # Read the file into a Pandas DataFrame
+            file_content = io.StringIO(file.stream.read().decode('UTF-8'))
+            data = pd.read_csv(file_content)
 
-        # Use functions to process files
-        data = functions.process_csv_files('uploads', file_names)
+            # Process the single DataFrame
+            data = functions.process_single_csv_file(data)
 
-        # Filter by state if necessary (optional)
-        if geography == 'state' and selected_state:
-            data = functions.filter_by_state(data, selected_state)
+            # Create the 'state' column
+            data = functions.state(data)
 
-        # Process files based on review type (not optional)
-        data = functions.process_files(data, review_type)
+            # Filter by state if necessary (optional)
+            if geography == 'state' and selected_state:
+                data = functions.filter_by_state(data, selected_state)
 
-        # Master NLP function
-        data = functions.master_nlp(data)
+            # Process files based on review type (not optional)
+            data = functions.process_files(data, review_type)
 
-        # You might need to handle how to display data or pass it to another view
-        return render_template('results.html', data=data.to_html())
+            # Master NLP function
+            data = functions.master_nlp(data)
+
+            # You might need to handle how to display data or pass it to another view
+            return render_template('results.html', data=data.to_html())
 
     states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
               "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
