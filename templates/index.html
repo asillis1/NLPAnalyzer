@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload CSVs</title>
+    <title>Upload CSV</title>
 </head>
 <body>
     <form action="/" method="post" enctype="multipart/form-data">
-        <label for="file1">Upload CSV 1:</label>
-        <input type="file" id="file1" name="file1" accept=".csv"><br>
-        <label for="file2">Upload CSV 2:</label>
-        <input type="file" id="file2" name="file2" accept=".csv"><br>
-        <label for="file3">Upload CSV 3:</label>
-        <input type="file" id="file3" name="file3" accept=".csv"><br>
+        <label for="file">Upload CSV:</label>
+        <input type="file" id="file" name="file" accept=".csv"><br>
 
         <p>Geography:</p>
         <input type="radio" id="state" name="geography" value="state" onclick="showDropdown()">
