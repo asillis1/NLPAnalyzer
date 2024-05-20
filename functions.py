@@ -337,6 +337,109 @@ def master_nlp(data):
     data = add_sentiment_scores(data)
     return data
 
+############################# RESULTS CODE #####################################
+
+def plot_sentiment_trend_by_category(data):
+    data['checkout_date'] = pd.to_datetime(data['checkout_date'])
+    data['Year-Month'] = data['checkout_date'].dt.to_period('M')
+
+    category_names = ['amenities', 'location', 'check-in', 'cleanliness', 'accuracy', 'communication']
+    plots = {}
+
+    for category in category_names:
+        category_data = data[data['category'] == category]
+
+        if category_data['Year-Month'].dtype == object:
+            category_data['Year-Month'] = category_data['Year-Month'].astype('period[M]')
+
+        year_month_labels = category_data['Year-Month'].astype(str).tolist()
+
+        category_data['classification'] = pd.cut(category_data['compound_score'], bins=[-float('inf'), -0.05, 0.05, float('inf')], labels=['Negative', 'Neutral', 'Positive'])
+        sentiment_counts = category_data.groupby(['Year-Month', 'classification']).size().unstack(fill_value=0)
+
+        all_months = pd.period_range(start=sentiment_counts.index.min(), end=sentiment_counts.index.max(), freq='M')
+        sentiment_counts = sentiment_counts.reindex(all_months, fill_value=0)
+
+        fig = go.Figure()
+
+        for sentiment in ['Positive', 'Neutral', 'Negative']:
+            fig.add_trace(go.Bar(
+                x=sentiment_counts.index.astype(str),
+                y=sentiment_counts[sentiment],
+                name=sentiment,
+                marker_color={'Positive': 'green', 'Neutral': 'grey', 'Negative': 'red'}[sentiment]
+            ))
+
+        fig.update_layout(
+            barmode='stack',
+            title=f'Sentiment Trend for {category.capitalize()} Over Time',
+            xaxis=dict(title='Year-Month', type='category', tickangle=-45),
+            yaxis=dict(title='Count of Segments'),
+            autosize=True,
+            width=1000,
+            height=600,
+            legend_title_text='Sentiment'
+        )
+
+        plots[category] = pio.to_html(fig, full_html=False)
+
+    return plots
+
+def calculate_metrics(group):
+    group['checkout_date'] = pd.to_datetime(data['checkout_date'])
+    group['Year-Month'] = data['checkout_date'].dt.to_period('M')
+    group['checkout_date'] = data['checkout_date'].dt.strftime('%Y-%m-%d')
+    
+    # Group by Category and Year-Month, then calculate metrics
+    monthly_metrics = data.groupby(['category', 'Year-Month']).apply(lambda group:pd.Series({
+      'Promoters': len(group[group['compound_score'] >= 0.61]),
+      'Detractors': len(group[group['compound_score'] <= 0.20]),
+      'All Segments': len(group),
+      'Neutrals': len(group) - len(group[group['compound_score'] >= 0.61]) - len(group[group['compound_score'] <= 0.20]),
+      'NPS-like Metric': (len(group[group['compound_score'] >= 0.61]) - len(group[group['compound_score'] <= 0.20])) / len(group)
+      })).reset_index()
+
+    return monthly_metrics
+
+
+def plot_trend(data, category_name):
+    category_names = ['amenities', 'location', 'check-in', 'cleanliness', 'accuracy', 'communication']
+    plots = {}
+    for category in category_names:
+        data = data[data['category'] == category]
+        # Ensure 'Year-Month' is in the proper datetime format
+        if data['Year-Month'].dtype == object:
+            data['Year-Month'] = pd.to_datetime(data['Year-Month'], format='%Y-%m')
+
+        # Format year-month labels for the x-axis
+        year_month_labels = data['Year-Month'].dt.strftime('%Y-%m').tolist()
+        nps_values = data['NPS-like Metric']
+
+        # Create the figure
+        fig = go.Figure()
+
+        # Add bar chart
+        fig.add_trace(go.Bar(x=year_month_labels, y=nps_values, name='NPS Metric'))
+
+        # Add trend line
+        fig.add_trace(go.Scatter(x=year_month_labels, y=nps_values, mode='lines+markers', name='Trend Line', line=dict(color='red')))
+
+        fig.update_layout(
+            title='{} NPS Metric Trend'.format(category_name.capitalize()),
+            xaxis_title='Year-Month',
+            yaxis_title='NPS-like Metric',
+            xaxis=dict(
+                type='category',
+                tickangle=-45),
+            autosize=False,
+            width=1800,
+            height=600,
+            margin=dict(l=50,r=50,b=100,t=100,pad=4))
+        
+        plots[category] = pio.to_html(fig, full_html=False)
+
+    return plots
+
 # This is how it should be used: 
 # test = master_nlp(data)
 # print(test)
